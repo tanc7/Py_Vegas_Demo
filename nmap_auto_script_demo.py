@@ -1,9 +1,16 @@
+#!/usr/bin/env python
+# coding=UTF-8
+
 import os
 import sys
 import operator
 import socket
 from termcolor import colored
 sys.stdout.write("\x1b[8;{rows};{cols}t".format(rows=64, cols=200)) # sets window to full screen
+
+sys.path.append("/root/Documents/")
+import toolkits
+
 
 def red(string):
     string = colored(string,'red',attrs=['bold'])
@@ -33,6 +40,7 @@ os.system('msfdb start')
 
 print red("Starting up Tor Service")
 os.system("gnome-terminal -e 'bash -c \"tor; exec bash\"'")
+
 
 def scan_by_metasploit(script_chosen, scan_str):
     os.chdir("/root/Documents")
@@ -1300,7 +1308,18 @@ tmp_resource_file = "./db_nmap_temp_file.rc"
 def use_individual_script():
     print str(dict_all_nmap_scripts).replace(',','\n')
     script_chosen = int(raw_input(cyan("Which script would you like to use? Enter a number: ")))
-    script_chosen = dict_all_nmap_scripts[script_chosen]
+    try:
+        script_chosen = dict_all_nmap_scripts[script_chosen]
+        script_selected_str = """NMap Script Selected: {0}
+        """.format(
+            str(script_chosen)
+        )
+
+        print green(script_selected_str)
+    except KeyError:
+        os.system('clear')
+        print red("Selection not found in database, please enter a number listed in the database!")
+        main()
 
     metasploit_or_regular_nmap(script_chosen)
     return
@@ -1433,6 +1452,31 @@ def tsocks_nmap():
     print green(complete_str)
     return
 
+def help_me():
+    print str(dict_all_nmap_scripts).replace(',','\n')
+
+    opt_choice = int(raw_input(yellow("Enter the NUMBER of a script you want to see help for: ")))
+
+    try:
+        script_chosen = dict_all_nmap_scripts[opt_choice]
+        script_selected_str = """NMap Script Selected: {0}
+        """.format(
+            str(script_chosen)
+        )
+
+        print green(script_selected_str)
+
+    except KeyError:
+        os.system('clear')
+        print red("The selection is not in the database, please choose a number in the database")
+        main()
+
+    cmd_str = "nmap --script-help={0}".format(
+        script_chosen
+    )
+    os.system(cmd_str)
+    metasploit_nmap_question()
+    return
 def metasploit_nmap_question():
     intro_str = """
     Dear User,
@@ -1442,6 +1486,7 @@ def metasploit_nmap_question():
     1. Run NMap through METASPLOIT FRAMEWORK -- Scans are automatically added to your MSF Hosts Database file
     2. Or run NMap INDEPENDENTLY -- Scans will generate three output results that are located in your /root/Documents directory
     3. Or run a NMap script INDIVIDUALLY -- Helps save time since certain scripts can take forever by itself
+    4. HELP ME, learn details about a script from a selectable menu
 
     All methods are properly anonymized via Tor and TSocks (which comes with your Arms-Commander Installation)
 
@@ -1461,6 +1506,10 @@ def metasploit_nmap_question():
         main()
     elif question == 3:
         use_individual_script()
+        main()
+
+    elif question == 4:
+        help_me()
         main()
     else:
         print red("Please enter 'Y' or 'N'")
@@ -1883,6 +1932,145 @@ def select_by_category():
         select_by_category()
     main()
     return
+
+def custom_scan_metasploit(cmd_str):
+    os.chdir("/root/Documents")
+    run_resource_file_str = "tsocks msfconsole -r ./db_nmap_temp_file.rc"
+    # This command clears out the temporary resource file used to run metasploit scans
+    clear_str = """echo "" > {0}
+    """.format(
+        tmp_resource_file
+    )
+    os.system(clear_str)
+
+    # writes two lines, the original command string, then a new line, and then a exit command
+    w = open(tmp_resource_file,'a+')
+    w.write(cmd_str + '\n')
+    w.write("exit")
+    w.close()
+
+
+    os.system(run_resource_file_str)
+    main()
+    return
+
+def custom_scan():
+    run_resource_file_str = "tsocks msfconsole -r ./db_nmap_temp_file.rc"
+    options_string = ""
+
+    print """
+    Choose how you want to scan with:
+
+    1. Metasploit Framework ("db_nmap")
+    2. Regular NMap
+
+    Both are obscured using Tor and TSocks
+    """
+    nmap_type = int(raw_input(yellow("Enter a NMAP TYPE: ")))
+
+    if nmap_type == 1:
+        nmap_type = "db_nmap"
+    elif nmap_type == 2:
+        nmap_type = "nmap"
+    else:
+        print red("You need to choose a NMap type: ")
+        custom_scan()
+
+    opt_ping_noping = str(raw_input(yellow("Enter prompt here: ")).replace(',','').replace('%','').replace('$',''))
+
+    if opt_ping_noping != "":
+        	options_string = options_string + " " + opt_ping_noping # Do not forget about a optparse character like -v = Verbose or something!
+    else:
+        	pass
+    # For NMap, that means options_string will be added between cmd_str + options_string + target_string
+    # To put all the variables together
+
+
+    opt_timing_mode = str(raw_input(yellow("Enter prompt here: ")).replace(',','').replace('%','').replace('$',''))
+
+    if opt_timing_mode != "":
+        	options_string = options_string + " " + opt_timing_mode # Do not forget about a optparse character like -v = Verbose or something!
+    else:
+        	pass
+    # For NMap, that means options_string will be added between cmd_str + options_string + target_string
+    # To put all the variables together
+
+
+    opt_os_detect = str(raw_input(yellow("Enter prompt here: ")).replace(',','').replace('%','').replace('$',''))
+
+    if opt_os_detect != "":
+        	options_string = options_string + " " + opt_os_detect # Do not forget about a optparse character like -v = Verbose or something!
+    else:
+        	pass
+    # For NMap, that means options_string will be added between cmd_str + options_string + target_string
+    # To put all the variables together
+
+
+    opt_scan_intensity = str(raw_input(yellow("Enter prompt here: ")).replace(',','').replace('%','').replace('$',''))
+
+    if opt_scan_intensity != "":
+        	options_string = options_string + " " + opt_scan_intensity # Do not forget about a optparse character like -v = Verbose or something!
+    else:
+        	pass
+    # For NMap, that means options_string will be added between cmd_str + options_string + target_string
+    # To put all the variables together
+
+
+    opt_spoof_ip = str(raw_input(yellow("Enter prompt here: ")).replace(',','').replace('%','').replace('$',''))
+
+    if opt_spoof_ip != "":
+        	options_string = options_string + " " + opt_spoof_ip # Do not forget about a optparse character like -v = Verbose or something!
+    else:
+        	pass
+    # For NMap, that means options_string will be added between cmd_str + options_string + target_string
+    # To put all the variables together
+
+
+    opt_network_interface = str(raw_input(yellow("Enter prompt here: ")).replace(',','').replace('%','').replace('$',''))
+
+    if opt_network_interface != "":
+        	options_string = options_string + " " + opt_network_interface # Do not forget about a optparse character like -v = Verbose or something!
+    else:
+        	pass
+    # For NMap, that means options_string will be added between cmd_str + options_string + target_string
+    # To put all the variables together
+
+
+    target_ip = str(raw_input(yellow("Enter prompt here: ")).replace(',','').replace('%','').replace('$',''))
+
+    if target_ip != "":
+        pass
+    else:
+        print red("You need to enter a TARGET hostname, IP or range, or a URL")
+        custom_scan()
+    # For NMap, that means options_string will be added between cmd_str + options_string + target_string
+    # To put all the variables together
+
+
+    opt_packet_fragmentation = str(raw_input(yellow("Enter prompt here: ")).replace(',','').replace('%','').replace('$',''))
+
+    if opt_packet_fragmentation != "":
+        	options_string = options_string + " " + opt_packet_fragmentation # Do not forget about a optparse character like -v = Verbose or something!
+    else:
+        	pass
+    # For NMap, that means options_string will be added between cmd_str + options_string + target_string
+    # To put all the variables together
+
+    opt_choice = int(raw_input(yellow("Enter the NUMBER corresponding to the NMap script that you would like to use: ")))
+    script_chosen = dict_all_nmap_scripts[opt_choice]
+    cmd_str = "tsocks {0} {1} --script={2} {3}".format(
+        str(nmap_type),
+        str(options_string),
+        script_chosen,
+        target_ip
+    )
+
+    if nmap_type == "nmap":
+        os.system(cmd_str)
+    if nmap_type == "db_nmap":
+        custom_scan_metasploit(cmd_str)
+    return
+
 def main():
     metasploit_nmap_question()
     main()

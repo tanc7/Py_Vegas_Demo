@@ -5,7 +5,7 @@ import operator
 
 # install Tor, Tsocks, and NMap for you
 
-os.system("sudo apt-get update && apt-get install tor tsocks nmap")
+os.system("sudo apt-get update && apt-get install tor tsocks nmap -y")
 
 # git clone the latest repo
 os.chdir("/tmp")
